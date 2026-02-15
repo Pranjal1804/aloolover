@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+boto3
+elasticsearch
+pydantic
+python-dotenv
+pytest
+httpx
+requests
+typing_extensions
+pyyaml

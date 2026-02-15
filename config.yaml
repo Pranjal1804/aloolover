@@ -1,0 +1,18 @@
+use_case: "reliability_gate_demo"
+thresholds:
+  deploy: 0.8
+  warn: 0.5
+evaluation:
+  num_prompts: 10
+  prompt_categories:
+    - "factual"
+    - "reasoning"
+model:
+  provider: "bedrock"
+  model_id: "anthropic.claude-v2"
+elasticsearch:
+  host: "localhost"
+  index: "trusted_docs"
+doc_sources:
+  - type: "file"
+    path: "data/docs"
