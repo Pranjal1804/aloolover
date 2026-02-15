@@ -1,0 +1,28 @@
+use_case: "unsafe_hallucination_prone_bot"
+
+thresholds:
+  deploy: 0.95
+  warn: 0.9
+
+evaluation:
+  num_prompts: 5
+  prompt_categories:
+    - "factual"
+    - "reasoning"
+
+target_model:
+  provider: "ollama"
+  model_id: "llama3.2"
+
+verification_model:
+  provider: "bedrock"
+  model_id: "anthropic.claude-3-haiku-20240307-v1:0"
+
+elasticsearch:
+  host: "localhost"
+  port: 9200
+  index: "trusted_docs"
+
+doc_sources:
+  - type: "file"
+    path: "data/docs"

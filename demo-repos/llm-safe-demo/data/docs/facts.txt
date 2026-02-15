@@ -1,0 +1,6 @@
+The capital of France is Paris.
+The theory of relativity was proposed by Albert Einstein in 1905 and 1915.
+Python is a high-level programming language created by Guido van Rossum.
+The Earth orbits the Sun at an average distance of about 150 million kilometers.
+Water boils at 100 degrees Celsius at sea level.
+The speed of light in a vacuum is approximately 299,792 kilometers per second.

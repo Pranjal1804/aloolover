@@ -1,37 +1,115 @@
-name: CI
+name: LLM Reliability Gate
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHONPATH: .
 
 jobs:
-  build:
+  evaluate:
     runs-on: ubuntu-latest
 
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run Unit Tests
-      run: |
-        # Ensure src is in PYTHONPATH
-        export PYTHONPATH=$PYTHONPATH:.
-        pytest tests/
+      - name: Wait for Elasticsearch
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:9200/_cluster/health && break
+            echo "Waiting for ES..."
+            sleep 2
+          done
 
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Ingest trusted docs
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          BEDROCK_EMBEDDING_MODEL_ID: ${{ secrets.BEDROCK_EMBEDDING_MODEL_ID }}
+        run: |
+          python -c "
+          from src.ingest.pipeline import run_ingest
+          stats = run_ingest()
+          print(f'Ingested: {stats}')
+          "
+
+      - name: Start API server
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          BEDROCK_EMBEDDING_MODEL_ID: ${{ secrets.BEDROCK_EMBEDDING_MODEL_ID }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+        run: |
+          uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+          sleep 3
+          curl -s http://localhost:8000/health
+
+      - name: Run evaluation
+        id: evaluate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          BEDROCK_EMBEDDING_MODEL_ID: ${{ secrets.BEDROCK_EMBEDDING_MODEL_ID }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+        run: |
+          RESULT=$(curl -s -X POST http://localhost:8000/evaluate \
+            -H "Content-Type: application/json" \
+            -d '{"use_case": "ci"}')
+          echo "$RESULT" | python -m json.tool
+          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
+
+      - name: Parse result and update README
+        run: |
+          python scripts/update_readme_badge.py '${{ steps.evaluate.outputs.result }}'
+
+      - name: Commit README update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "chore: update reliability status badge"
+          git push || true
+
+      - name: Fail if rejected
+        run: |
+          DECISION=$(echo '${{ steps.evaluate.outputs.result }}' | python -c "import sys,json; print(json.load(sys.stdin)['score']['decision'])")
+          echo "Decision: $DECISION"
+          if [ "$DECISION" = "reject" ]; then
+            echo "::error::LLM Reliability Gate REJECTED deployment. Hallucination risk too high."
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: pytest tests/

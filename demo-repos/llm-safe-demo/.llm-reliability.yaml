@@ -1,0 +1,27 @@
+use_case: "safe_customer_support_bot"
+
+thresholds:
+  deploy: 0.6
+  warn: 0.3
+
+evaluation:
+  num_prompts: 3
+  prompt_categories:
+    - "factual"
+
+target_model:
+  provider: "ollama"
+  model_id: "llama3.2"
+
+verification_model:
+  provider: "bedrock"
+  model_id: "anthropic.claude-3-haiku-20240307-v1:0"
+
+elasticsearch:
+  host: "localhost"
+  port: 9200
+  index: "trusted_docs"
+
+doc_sources:
+  - type: "file"
+    path: "data/docs"
