@@ -21,8 +21,17 @@ def index_doc(index: str, doc_id: str, body: dict) -> None:
     """
     client = _get_es_client()
     client.index(index=index, id=doc_id, document=body)
-    # Refresh to make it searchable immediately (useful for tests/dev, maybe remove for prod)
     client.indices.refresh(index=index)
+
+def clear_index(index: str) -> None:
+    """
+    Delete and recreate an index to clear all data.
+    """
+    client = _get_es_client()
+    if client.indices.exists(index=index):
+        client.indices.delete(index=index)
+    client.indices.create(index=index)
+    print(f"Index '{index}' cleared.")
 
 def search_docs(query: str, index: str = "trusted_docs") -> list[dict]:
     """

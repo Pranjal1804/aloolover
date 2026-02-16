@@ -39,23 +39,28 @@ def score_risk(state: dict) -> None:
     # Let's assume config "deploy": 0.8 means "Reliability Score > 0.8".
     # Reliability = (supported) / total ? Or (supported + 0.5*weak) / total?
     
-    # Let's use a "Reliability Score" where supported=1, weak=0.5, unsupported=0.
-    reliability_score = (supported + 0.5 * weakly_supported) / total if total > 0 else 0.0
+    # Omniscience Score (Reliability): supported=1, weak=0.5, unsupported=0.
+    # Higher is better.
+    omniscience_score = (supported + 0.5 * weakly_supported) / total if total > 0 else 0.0
+    
+    # Hallucination Score (Risk): Inverse of reliability.
+    # LOWER is better.
+    hallucination_score = 1.0 - omniscience_score
     
     decision = "reject"
-    if reliability_score >= thresholds.get("deploy", 0.8):
+    if omniscience_score >= thresholds.get("deploy", 0.8):
         decision = "deploy"
-    elif reliability_score >= thresholds.get("warn", 0.5):
+    elif omniscience_score >= thresholds.get("warn", 0.5):
         decision = "warn"
         
     state["score"] = {
-        "risk": 1.0 - reliability_score, # Risk is inverse of reliability
+        "risk": hallucination_score, # Mapped to 'Hallucination' in dashboard
         "decision": decision,
         "total_claims": total,
         "supported": supported,
         "weakly_supported": weakly_supported,
         "unsupported": unsupported,
-        "reliability": reliability_score # Added for clarity
+        "reliability": omniscience_score 
     }
     
-    print(f"Scored Risk: {state['score']}")
+    print(f"Scored Hallucination: {hallucination_score:.2f} | Reliability: {omniscience_score:.2f} | Decision: {decision}")

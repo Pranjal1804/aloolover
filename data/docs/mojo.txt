@@ -1,0 +1,171 @@
+Mojo Programming: Basic to Medium Level Guide
+1. What is Mojo?
+
+Mojo is a high-performance programming language designed for AI and systems programming. It was introduced by Modular with the goal of combining:
+
+🐍 Python-like simplicity
+
+⚡ C/C++-level performance
+
+🔬 Strong support for AI and ML workloads
+
+Mojo is especially powerful for developers who want speed without sacrificing readability.
+
+🌱 Part 1: Basics of Mojo
+1. Hello World
+fn main():
+    print("Hello, Mojo!")
+
+
+fn defines a function.
+
+main() is the program entry point.
+
+Syntax feels very similar to Python.
+
+2. Variables and Types
+
+Mojo supports both dynamic and static typing.
+
+Dynamic Style (Python-like)
+x = 10
+name = "Mojo"
+
+Static Type (Recommended for Performance)
+let x: Int = 10
+let pi: Float64 = 3.14159
+
+
+let → immutable variable
+
+var → mutable variable
+
+Example:
+
+var counter: Int = 0
+counter += 1
+
+3. Functions
+fn add(a: Int, b: Int) -> Int:
+    return a + b
+
+
+Parameter types must be declared.
+
+Return type comes after ->.
+
+4. Control Flow
+If-Else
+fn check(num: Int):
+    if num > 0:
+        print("Positive")
+    else:
+        print("Non-positive")
+
+Loops
+for i in range(5):
+    print(i)
+
+var i = 0
+while i < 5:
+    print(i)
+    i += 1
+
+🚀 Part 2: Medium-Level Concepts
+5. Structs (Like Classes but Lightweight)
+struct Person:
+    var name: String
+    var age: Int
+
+fn main():
+    var p = Person("Pranjal", 20)
+    print(p.name)
+
+
+struct is efficient and memory-safe.
+
+Useful for performance-critical programs.
+
+6. Ownership & Memory Safety
+
+Mojo introduces ownership concepts (inspired by Rust).
+
+Example:
+
+fn process(value: Int):
+    print(value)
+
+
+Mojo ensures:
+
+No accidental memory leaks
+
+Better performance
+
+Safe parallelism
+
+7. Performance Features
+
+Mojo allows low-level optimizations:
+
+Explicit memory control
+
+SIMD support
+
+GPU acceleration
+
+Compile-time metaprogramming
+
+Example of strongly typed optimized code:
+
+fn multiply(a: Int, b: Int) -> Int:
+    return a * b
+
+
+Static typing enables faster compilation and execution.
+
+8. Python Interoperability
+
+One of Mojo’s strongest features:
+
+You can import and use Python libraries directly.
+
+from python import Python
+
+fn main():
+    let math = Python.import_module("math")
+    print(math.sqrt(16))
+
+
+This makes transition easy for developers already comfortable with Python.
+
+🎯 When to Use Mojo?
+
+Mojo is ideal for:
+
+AI/ML model acceleration
+
+Writing high-performance numerical code
+
+Systems-level programming
+
+Replacing slow Python bottlenecks
+
+🧠 Learning Path Recommendation
+
+If you're starting out:
+
+Master basic syntax (variables, loops, functions).
+
+Practice structs and typed functions.
+
+Learn ownership & memory model.
+
+Explore performance optimization features.
+
+Build small AI-focused utilities.
+
+🔥 Final Thought
+
+Mojo bridges the gap between ease of Python and power of C++.
+If you’re into AI, systems, or performance engineering, Mojo is worth learning.

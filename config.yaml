@@ -7,7 +7,7 @@ thresholds:
 
 # Evaluation settings
 evaluation:
-  num_prompts: 5
+  num_prompts: 100
   prompt_categories:
     - "factual"
     - "reasoning"

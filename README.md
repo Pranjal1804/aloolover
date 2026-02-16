@@ -1,5 +1,24 @@
 # LLM Reliability Gate
 
+<!-- RELIABILITY_GATE_START -->
+## 🚨 LLM Reliability Status
+
+**❌ Deployment Blocked**
+
+| Metric | Value |
+|--------|-------|
+| Hallucination Risk | 0.67 |
+| Reliability Score | 0.33 |
+| Total Claims | 21 |
+| Supported | 1 |
+| Weakly Supported | 12 |
+| Unsupported | 7 |
+| Decision | `reject` |
+| Run ID | `b49d497b…` |
+
+<!-- RELIABILITY_GATE_END -->
+
+
 A system to evaluate LLM outputs for reliability, using Bedrock, Elasticsearch, and structured agents.
 
 ## Project Structure

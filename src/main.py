@@ -50,9 +50,9 @@ def evaluate(request: EvaluationRequest):
 
 
 @app.post("/ingest")
-def ingest_documents():
+def ingest_documents(clear_first: bool = False):
     try:
-        stats = run_ingest()
+        stats = run_ingest(clear_first=clear_first)
         return {"status": "success", "stats": stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

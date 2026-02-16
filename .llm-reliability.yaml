@@ -3,11 +3,11 @@ use_case: "reliability_gate_demo"
 # Thresholds for decision making
 thresholds:
   deploy: 0.8
-  warn: 0.5
+  warn: 0.4
 
 # Evaluation settings
 evaluation:
-  num_prompts: 5
+  num_prompts: 20
   prompt_categories:
     - "factual"
     - "reasoning"

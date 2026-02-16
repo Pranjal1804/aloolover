@@ -1,15 +1,19 @@
 import os
 from src.config.loader import load_config
-from src.wrappers.elasticsearch_helper import index_doc
+from src.wrappers.elasticsearch_helper import index_doc, clear_index
 from src.wrappers.bedrock import embed
 import uuid
 
-def run_ingest(config_path: str | None = None) -> dict:
+def run_ingest(config_path: str | None = None, clear_first: bool = False) -> dict:
     """
     Run document ingestion pipeline.
-    Reads documents from configured sources, chunks them, embeds them, and indexes into ES.
     """
     config = load_config(config_path)
+    if clear_first:
+        es_config = config.get("elasticsearch", {})
+        index_name = es_config.get("index", "trusted_docs")
+        clear_index(index_name)
+
     sources = config.get("doc_sources", [])
     es_config = config.get("elasticsearch", {})
     index_name = es_config.get("index", "trusted_docs")

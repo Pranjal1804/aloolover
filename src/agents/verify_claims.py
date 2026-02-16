@@ -10,19 +10,18 @@ def verify_claims(state: dict) -> None:
     verdicts = []
     
     verification_prompt_template = """
-    Verify the following claim based on the provided evidence.
+    CRITICAL: You must return ONLY valid JSON. No conversational text, no explanations, no headers.
     
-    Claim: {claim}
+    Instruction: Verify the following CLAIM against the provided EVIDENCE.
+    Labels: 
+    - "supported": Evidence directly proves the claim.
+    - "weakly_supported": Evidence suggests it but isn't conclusive.
+    - "unsupported": Evidence contradicts or doesn't mention the claim.
     
-    Evidence:
-    {evidence_text}
+    EVIDENCE: {evidence_text}
+    CLAIM: {claim}
     
-    Determine if the claim is supported by the evidence.
-    Return a JSON object with:
-    - "label": "supported", "weakly_supported", or "unsupported"
-    - "justification": Brief explanation.
-    
-    Output JSON:
+    Output Format (JSON only): {{"label": "supported|weakly_supported|unsupported", "justification": "short explanation"}}
     """
     
     for item in evidence_list:
@@ -33,11 +32,11 @@ def verify_claims(state: dict) -> None:
         if not claim_text:
             continue
             
-        evidence_text = "\n\n".join([doc.get("content", "") for doc in documents])
-        if not evidence_text:
-            evidence_text = "No relevant evidence found."
+        evidence_content = "\n\n".join([doc.get("content", "") for doc in documents])
+        if not evidence_content:
+            evidence_content = "No relevant evidence found."
             
-        prompt = verification_prompt_template.format(claim=claim_text, evidence_text=evidence_text[:2000]) # Truncate context if needed
+        prompt = verification_prompt_template.format(claim=claim_text, evidence_text=evidence_content[:2000]) # Truncate context if needed
         
         try:
             response_json = call_llm(prompt)
@@ -47,16 +46,27 @@ def verify_claims(state: dict) -> None:
                 response_json = response_json[7:]
             if response_json.startswith("```"):
                 response_json = response_json[3:]
-            if response_json.endswith("```"):
-                response_json = response_json[:-3]
-                
-            verdict = json.loads(response_json)
+            # Robust JSON extraction
+            content = response_json.strip()
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                 content = content.split("```")[1].split("```")[0].strip()
             
-            verdicts.append({
-                "claim": claim_text,
-                "label": verdict.get("label", "unsupported"),
-                "justification": verdict.get("justification", "No justification provided.")
-            })
+            try:
+                data = json.loads(content)
+                verdicts.append({
+                    "claim": claim_text,
+                    "label": data.get("label", "unsupported").lower(),
+                    "justification": data.get("justification", "No justification provided.")
+                })
+            except json.JSONDecodeError:
+                print(f"Failed to parse JSON for verification: {content[:100]}...")
+                verdicts.append({
+                    "claim": claim_text,
+                    "label": "unsupported",
+                    "justification": f"Parse error on verifier response: {content[:50]}"
+                })
             
         except Exception as e:
             print(f"Error verifying claim '{claim_text[:20]}...': {e}")
